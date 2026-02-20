@@ -316,6 +316,7 @@ export default function LandingPage() {
                         ASSET_VERSION: 2.0.1-PRO (GEMINI_2.0_READY)
                     </div>
                 </div>
+            </div>
         </main>
     );
 }
