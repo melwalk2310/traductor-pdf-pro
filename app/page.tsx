@@ -29,6 +29,7 @@ export default function LandingPage() {
     const [sourceLang, setSourceLang] = useState("detect");
     const [targetLang, setTargetLang] = useState("es");
     const [status, setStatus] = useState<"idle" | "uploading" | "translating" | "exporting" | "done" | "error">("idle");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -100,7 +101,6 @@ export default function LandingPage() {
                 setStatus("exporting");
                 await simulateProgress(100, 1000);
 
-                // Final Download Logic (Functional Prototype)
                 const blob = new Blob([result.translatedContent || ""], { type: "text/plain" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
@@ -113,10 +113,12 @@ export default function LandingPage() {
 
                 setStatus("done");
             } else {
+                setErrorMessage(result.error || "Error desconocido");
                 setStatus("error");
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
+            setErrorMessage(err.message || "Error fatal en la aplicación");
             setStatus("error");
         } finally {
             setIsProcessing(false);
@@ -254,8 +256,17 @@ export default function LandingPage() {
                                         <CheckCircle2 className="w-5 h-5" /> Traducción completada y descargada
                                     </div>
                                 ) : status === "error" ? (
-                                    <div className="flex items-center justify-center gap-2 p-4 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/10 rounded-2xl text-red-700 dark:text-red-400 font-bold">
-                                        <AlertCircle className="w-5 h-5" /> Hubo un error al procesar el documento
+                                    <div className="flex flex-col items-center justify-center gap-2 p-4 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/10 rounded-2xl text-red-700 dark:text-red-400 font-bold">
+                                        <div className="flex items-center gap-2">
+                                            <AlertCircle className="w-5 h-5" /> Hubo un error al procesar el documento
+                                        </div>
+                                        {errorMessage && <p className="text-xs font-normal opacity-80">{errorMessage}</p>}
+                                        <button
+                                            onClick={() => setStatus("idle")}
+                                            className="mt-2 text-xs underline hover:no-underline"
+                                        >
+                                            Reintentar
+                                        </button>
                                     </div>
                                 ) : (
                                     <button
