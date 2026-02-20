@@ -1,15 +1,24 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const genAI = new GoogleGenerativeAI(apiKey);
-
 export const translateText = async (text: string, targetLanguage: string = "Spanish") => {
-    if (!apiKey) {
-        throw new Error("GEMINI_API_KEY no está configurada en el servidor.");
+    const rawApiKey = process.env.GEMINI_API_KEY || "";
+
+    if (!rawApiKey) {
+        throw new Error("GEMINI_API_KEY no está configurada en el servidor (Vercel Settings > Environment Variables).");
     }
 
+    // Clean the key in case the user pasted "KEY=VALUE" or included quotes
+    let cleanApiKey = rawApiKey.trim();
+    if (cleanApiKey.includes("=")) {
+        // If they pasted "GEMINI_API_KEY=AIza...", extract only the value
+        cleanApiKey = cleanApiKey.split("=").pop() || cleanApiKey;
+    }
+    // Remove potential surrounding quotes
+    cleanApiKey = cleanApiKey.replace(/^['"]|['"]$/g, "");
+
+    const genAI = new GoogleGenerativeAI(cleanApiKey);
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.0-flash",
         systemInstruction: `You are an expert technical translator. 
     Context: Technical documentation (PDF/EPUB).
     Task: Translate high-quality technical content from any language to ${targetLanguage}.
@@ -28,7 +37,7 @@ export const translateText = async (text: string, targetLanguage: string = "Span
         return response.text();
     } catch (error: any) {
         console.error("Gemini Translation Error:", error);
-        const message = error?.message || "Error desconocido en Gemini API";
+        const message = error?.message || "Error desconocido en Gemini API. Verifica que la API Key sea válida.";
         throw new Error(`Error de Gemini: ${message}`);
     }
 };
