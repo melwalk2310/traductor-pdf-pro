@@ -39,8 +39,8 @@ export async function processTranslation(
             translatedContent,
             title: `${title} (${targetLang})`,
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Server Action Error:", error);
-        return { success: false, error: "Error durante el procesamiento de la traducción." };
+        return { success: false, error: error?.message || "Error desconocido en el servidor." };
     }
 }
