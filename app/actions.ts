@@ -1,6 +1,6 @@
 "use server";
 
-import { translateText } from "@/services/gemini";
+import { translateText } from "@/lib/gemini";
 import { ExporterContext, PdfExportStrategy, EpubExportStrategy, ExportOptions } from "@/lib/export-strategy";
 
 export async function processTranslation(
@@ -11,8 +11,8 @@ export async function processTranslation(
     format: "pdf" | "epub"
 ) {
     try {
-        // For large documents, we would chunk here. 
-        // For the initial functional demo, we'll translate the core content.
+        // Pandoc-like Pre-processing: Ensure content is treated as Markdown
+        // (Content is already structured in document-processor.ts)
         const translatedContent = await translateText(content, targetLang);
 
         const options: ExportOptions = {
