@@ -313,7 +313,7 @@ export default function LandingPage() {
                         </div>
                     ))}
                     <div className="text-center pt-8 opacity-20 text-[10px] font-mono">
-                        ASSET_VERSION: 2.0.1-PRO (GEMINI_2.0_READY)
+                        ASSET_VERSION: 2.0.2-PRO (MULTI_MODEL_SYNC)
                     </div>
                 </div>
             </div>

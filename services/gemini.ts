@@ -17,27 +17,51 @@ export const translateText = async (text: string, targetLanguage: string = "Span
     cleanApiKey = cleanApiKey.replace(/^['"]|['"]$/g, "");
 
     const genAI = new GoogleGenerativeAI(cleanApiKey);
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        systemInstruction: `You are an expert technical translator. 
-    Context: Technical documentation (PDF/EPUB).
-    Task: Translate high-quality technical content from any language to ${targetLanguage}.
-    Constraints:
-    - Respect and maintain all Markdown/HTML tags and structure.
-    - Preserve formatting, headings, and code blocks.
-    - Provide a natural, professional translation for a technical audience.
-    - Do not add any conversational filler. Just return the translated content.`,
-    });
 
-    const prompt = `Translate the following content to ${targetLanguage}:\n\n${text}`;
+    // List of models to try in sequence to bypass specific quota limits or 404s
+    const modelsToTry = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-flash-8b",
+        "gemini-pro"
+    ];
 
-    try {
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text();
-    } catch (error: any) {
-        console.error("Gemini Translation Error:", error);
-        const message = error?.message || "Error desconocido en Gemini API. Verifica que la API Key sea válida.";
-        throw new Error(`[v2.0-flash] Error de Gemini: ${message}`);
+    let lastError: any = null;
+
+    for (const modelId of modelsToTry) {
+        try {
+            console.log(`[Asset] Intentando traducción con modelo: ${modelId}`);
+            const model = genAI.getGenerativeModel({
+                model: modelId,
+                systemInstruction: `You are an expert technical translator. 
+            Context: Technical documentation (PDF/EPUB).
+            Task: Translate high-quality technical content from any language to ${targetLanguage}.
+            Constraints:
+            - Respect and maintain all Markdown/HTML tags and structure.
+            - Preserve formatting, headings, and code blocks.
+            - Provide a natural, professional translation for a technical audience.
+            - Do not add any conversational filler. Just return the translated content.`,
+            });
+
+            const prompt = `Translate the following content to ${targetLanguage}:\n\n${text}`;
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            return response.text();
+        } catch (error: any) {
+            lastError = error;
+            console.error(`[Asset] Error con modelo ${modelId}:`, error.message);
+
+            // If it's a quota error (429), we try the next model immediately
+            // If it's a 404, we try the next model
+            if (error.message?.includes("429") || error.message?.includes("404")) {
+                continue;
+            }
+            // For other critical errors, we stop
+            throw error;
+        }
     }
+
+    // If we reach here, all models failed
+    const finalMessage = lastError?.message || "Todos los modelos de Gemini fallaron o tienen la cuota agotada.";
+    throw new Error(`[v2.0.2] Error Crítico de Gemini: ${finalMessage}`);
 };
