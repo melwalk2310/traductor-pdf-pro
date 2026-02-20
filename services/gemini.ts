@@ -38,6 +38,6 @@ export const translateText = async (text: string, targetLanguage: string = "Span
     } catch (error: any) {
         console.error("Gemini Translation Error:", error);
         const message = error?.message || "Error desconocido en Gemini API. Verifica que la API Key sea válida.";
-        throw new Error(`Error de Gemini: ${message}`);
+        throw new Error(`[v2.0-flash] Error de Gemini: ${message}`);
     }
 };

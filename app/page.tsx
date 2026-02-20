@@ -312,8 +312,10 @@ export default function LandingPage() {
                             </div>
                         </div>
                     ))}
+                    <div className="text-center pt-8 opacity-20 text-[10px] font-mono">
+                        ASSET_VERSION: 2.0.1-PRO (GEMINI_2.0_READY)
+                    </div>
                 </div>
-            </div>
         </main>
     );
 }
