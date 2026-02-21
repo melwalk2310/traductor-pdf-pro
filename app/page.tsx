@@ -4,8 +4,8 @@ import { useState, useRef } from "react";
 import { Upload, FileText, Download, Languages, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { processTranslation } from "./actions";
-import { batchTranslate } from "@/src/lib/translator";
+import { processTranslation, extractTextAction, translateChunkAction } from "./actions";
+import { chunkText } from "@/lib/text-utils";
 
 function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));
@@ -47,21 +47,55 @@ export default function LandingPage() {
 
         setIsProcessing(true);
         setStatus("uploading");
-        setProgress(10);
+        setProgress(5);
 
         try {
-            // En producción, aquí leeríamos el PDF con un servidor o worker
-            const mockText = Array(20).fill("Este es un texto largo para probar el batching 4.0. ").join("\n");
+            // 1. Convertir archivo a Base64 para enviarlo al servidor
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+                reader.onload = () => resolve((reader.result as string).split(",")[1]);
+                reader.readAsDataURL(file);
+            });
+            const base64File = await base64Promise;
+
+            // 2. Extraer texto en el Servidor (SRE Secure Extraction)
+            const extractionResult = await extractTextAction(base64File);
+            if (!extractionResult.success || !extractionResult.content) {
+                throw new Error(extractionResult.error || "Fallo en la extracción de texto");
+            }
 
             setStatus("translating");
+            setProgress(15);
 
-            // Pipeline de Lote 4.0.0
-            const fullBookTranslation = await batchTranslate(mockText, targetLang, (current, total) => {
-                const p = 10 + (current / total) * 80;
+            // 3. Pipeline de Lote 4.0.1 (Frontend Orchestration)
+            const chunks = chunkText(extractionResult.content, 4000);
+            const totalChunks = chunks.length;
+            const results: string[] = [];
+
+            let i = 1;
+            for (const chunk of chunks) {
+                setErrorMessage(`Traduciendo bloque ${i} de ${totalChunks}...`);
+
+                const chunkResult = await translateChunkAction(chunk, targetLang);
+                if (!chunkResult.success || !chunkResult.translated) {
+                    throw new Error(chunkResult.error || `Error en bloque ${i}`);
+                }
+
+                results.push(chunkResult.translated);
+
+                const p = 15 + (i / totalChunks) * 75;
                 setProgress(p);
-                setErrorMessage(`Traduciendo bloque ${current} de ${total}...`);
-            });
 
+                // Delay SRE para evitar Rate Limits
+                if (i < totalChunks) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                i++;
+            }
+
+            const fullBookTranslation = results.join("\n\n");
+
+            // 4. Exportación Robusta
             setStatus("exporting");
             setProgress(95);
 
@@ -184,7 +218,7 @@ export default function LandingPage() {
                 </div>
 
                 <div className="text-center opacity-20 text-[10px] font-mono">
-                    ASSET_VERSION: 4.0.0-BATCH (SRE_INTEGRITY)
+                    ASSET_VERSION: 4.0.1-BATCH (SRE_STABLE_SYNC)
                 </div>
             </div>
         </main>

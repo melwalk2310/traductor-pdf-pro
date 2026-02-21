@@ -2,7 +2,40 @@
 
 import { translateContent } from "@/lib/translation-service";
 import { ExporterContext, PdfExportStrategy, EpubExportStrategy, ExportOptions } from "@/lib/export-strategy";
+import { extractPdfContent } from "@/lib/document-processor";
 
+/**
+ * SRE Action: Extrae texto completo del PDF en el servidor
+ */
+export async function extractTextAction(base64File: string) {
+    try {
+        const nodeBuffer = Buffer.from(base64File, "base64");
+        // Convert Node Buffer to ArrayBuffer
+        const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
+        const doc = await extractPdfContent(arrayBuffer);
+        return { success: true, content: doc.content, title: doc.title };
+    } catch (error: any) {
+        console.error("[SRE] extraction error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * SRE Action: Traduce un solo fragmento de forma aislada
+ */
+export async function translateChunkAction(text: string, targetLang: string) {
+    try {
+        const translated = await translateContent(text, targetLang);
+        return { success: true, translated };
+    } catch (error: any) {
+        console.error("[SRE] chunk translation error:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * SRE Action: Procesa el ensamblado final y generación del archivo
+ */
 export async function processTranslation(
     content: string,
     sourceLang: string,
@@ -11,7 +44,8 @@ export async function processTranslation(
     format: "pdf" | "epub"
 ) {
     try {
-        const translatedContent = await translateContent(content, targetLang);
+        // En este flujo 4.0.1, el contenido YA viene traducido del cliente
+        const translatedContent = content;
 
         const options: ExportOptions = {
             title,
@@ -36,12 +70,9 @@ export async function processTranslation(
             base64Data = fileData.toString("base64");
         }
 
-        console.log(`[SRE Monitor] Traducción y Exportación (${format}) exitosa. Tamaño base64: ${base64Data.length}`);
-
         return {
             success: true,
             fileData: base64Data,
-            translatedContent,
             title: `${title} (${targetLang})`,
             format
         };
