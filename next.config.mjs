@@ -1,7 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  /* config options here */
+  transpilePackages: ["lucide-react"],
+  serverExternalPackages: ["pdf-parse", "pdf-lib", "epub-gen-memory"],
 };
 
 export default nextConfig;
