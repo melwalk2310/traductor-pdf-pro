@@ -1,6 +1,3 @@
-import snarkdown from "snarkdown";
-import epub from "epub-gen-memory";
-
 export interface ExportOptions {
     title: string;
     content: string;
@@ -20,6 +17,9 @@ export class PdfExportStrategy implements ExportStrategy {
 
 export class EpubExportStrategy implements ExportStrategy {
     async execute(options: ExportOptions): Promise<Buffer> {
+        const { default: snarkdown } = await import("snarkdown");
+        const { default: epub } = await import("epub-gen-memory");
+
         console.log(`[SRE] Iniciando generación de EPUB: ${options.title}`);
 
         const htmlContent = snarkdown(options.content);

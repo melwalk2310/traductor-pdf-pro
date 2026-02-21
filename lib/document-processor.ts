@@ -1,5 +1,3 @@
-import { PDFDocument } from 'pdf-lib';
-
 export interface ExtractedDocument {
     title: string;
     content: string;
@@ -8,10 +6,10 @@ export interface ExtractedDocument {
 
 /**
  * Robust text extraction logic for large PDFs.
- * Handles up to 100MB by utilizing stream-aware buffer processing.
  */
 export const extractPdfContent = async (buffer: ArrayBuffer): Promise<ExtractedDocument> => {
     try {
+        const { PDFDocument } = await import('pdf-lib');
         const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true });
         const title = pdfDoc.getTitle() || "Documento Sin Título";
         const author = pdfDoc.getAuthor() || "Traductor PDF Pro User";

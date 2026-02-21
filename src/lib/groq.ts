@@ -1,22 +1,14 @@
-import Groq from "groq-sdk";
-
-const apiKey = process.env.GROQ_API_KEY || "";
-
-/**
- * Initialize Groq Client
- */
-export const groq = new Groq({
-    apiKey,
-});
-
 /**
  * Professional Translation with Groq (Primary Engine)
- * Model: llama-3.3-70b-versatile or similar
  */
 export const translateWithGroq = async (text: string, targetLanguage: string) => {
+    const apiKey = process.env.GROQ_API_KEY || "";
     if (!apiKey) {
         throw new Error("GROQ_API_KEY no configurada.");
     }
+
+    const { default: Groq } = await import("groq-sdk");
+    const groq = new Groq({ apiKey });
 
     const completion = await groq.chat.completions.create({
         messages: [

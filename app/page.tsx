@@ -218,7 +218,7 @@ export default function LandingPage() {
                 </div>
 
                 <div className="text-center opacity-20 text-[10px] font-mono">
-                    ASSET_VERSION: 4.0.1-BATCH (SRE_STABLE_SYNC)
+                    ASSET_VERSION: 4.0.3-BATCH (SRE_TRIPLE_ISOLATION_STABLE)
                 </div>
             </div>
         </main>

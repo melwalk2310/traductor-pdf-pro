@@ -1,11 +1,11 @@
-import { translateText as translateWithGemini, TranslationError } from "./gemini";
-import { translateWithGroq } from "@/src/lib/groq";
-
 /**
  * Unified Translation Service with SRE High Availability Fallback
  * Strategy: GROQ (Primary) -> GEMINI (Backup)
  */
 export const translateContent = async (text: string, targetLanguage: string) => {
+    const { translateText: translateWithGemini, TranslationError } = await import("./gemini");
+    const { translateWithGroq } = await import("@/src/lib/groq");
+
     const hasGroq = !!process.env.GROQ_API_KEY;
 
     // Pandoc-like logic: Ensure text is treated as Markdown
