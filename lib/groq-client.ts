@@ -17,12 +17,7 @@ export async function translateWithGroqClient(text: string, targetLanguage: stri
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert technical translator. 
-                    Task: Translate Markdown content to ${targetLanguage}.
-                    Constraints:
-                    - Preserve all Markdown structural elements.
-                    - Return ONLY the translated Markdown.
-                    - High performance, low latency.`
+                    content: `Eres un motor de traducción técnica. Traduce ÚNICAMENTE el texto proporcionado. No añadidas introducciones, no resumas, no te detengas hasta llegar al final del bloque. Mantén el formato Markdown. Idioma de destino: ${targetLanguage}`
                 },
                 {
                     role: "user",

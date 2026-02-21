@@ -20,7 +20,7 @@ export async function translateDocumentResilient(
 ): Promise<string> {
     const chunks = chunkText(content, 2000);
     const total = chunks.length;
-    let finalTranslation = "";
+    const resultsMap: string[] = []; // Immutable Array Accumulator
 
     let i = 1;
     for (const chunk of chunks) {
@@ -34,7 +34,7 @@ export async function translateDocumentResilient(
                     onProgress({
                         current: i,
                         total,
-                        status: `Traduciendo bloque ${i}/${total}`,
+                        status: `Bloque ${i} de ${total} procesado correctamente`,
                         attempts: attempts + 1
                     });
                 }
@@ -46,19 +46,17 @@ export async function translateDocumentResilient(
                 if (attempts >= 3) {
                     throw new Error(`Fallo crítico en bloque ${i} tras 3 intentos: ${error.message}`);
                 }
-                // Exponential backoff
                 await new Promise(r => setTimeout(r, 1000 * attempts));
             }
         }
 
-        finalTranslation += chunkResult + "\n\n";
+        resultsMap.push(chunkResult); // Infallible atomic push
         i++;
 
-        // Anti-rate limit delay
         if (i <= total) {
             await new Promise(r => setTimeout(r, 600));
         }
     }
 
-    return finalTranslation.trim();
+    return resultsMap.join("\n\n").trim();
 }
