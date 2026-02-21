@@ -101,15 +101,27 @@ export default function LandingPage() {
                 setStatus("exporting");
                 await simulateProgress(100, 1000);
 
-                const blob = new Blob([result.translatedContent || ""], { type: "text/plain" });
-                const url = URL.createObjectURL(blob);
+                // Observabilidad (SRE): Log de depuración para verificar datos antes de descarga
+                console.log("[SRE Monitor] Datos recibidos para descarga:", result.translatedContent?.substring(0, 100) + "...");
+
+                if (!result.translatedContent || result.translatedContent.length < 10) {
+                    throw new Error("Contenido insuficiente para generar el archivo.");
+                }
+
+                // Generación de Activo (Blob Management)
+                const mimeType = exportFormat === "epub" ? "application/epub+zip" : "application/pdf";
+                const blob = new Blob([result.translatedContent], { type: mimeType });
+                const url = window.URL.createObjectURL(blob);
+
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `${result.title}.${exportFormat === "epub" ? "epub" : "pdf"}`;
+                a.download = `${result.title}.${exportFormat}`;
                 document.body.appendChild(a);
                 a.click();
+
+                // SRE: Limpieza de memoria
                 document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(url);
 
                 setStatus("done");
             } else {
