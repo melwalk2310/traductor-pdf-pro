@@ -11,7 +11,6 @@ export async function processTranslation(
     format: "pdf" | "epub"
 ) {
     try {
-        // Pandoc-like Pre-processing applied inside translateContent
         const translatedContent = await translateContent(content, targetLang);
 
         const options: ExportOptions = {
@@ -30,7 +29,6 @@ export async function processTranslation(
         const exporter = new ExporterContext(strategy);
         const fileData = await exporter.export(options);
 
-        // SRE Check: Ensure fileData is valid before returning
         let base64Data = "";
         if (typeof fileData === "string") {
             base64Data = Buffer.from(fileData).toString("base64");
@@ -43,6 +41,7 @@ export async function processTranslation(
         return {
             success: true,
             fileData: base64Data,
+            translatedContent,
             title: `${title} (${targetLang})`,
             format
         };

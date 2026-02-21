@@ -11,29 +11,17 @@ export interface ExportStrategy {
     execute(options: ExportOptions): Promise<string | Buffer | Uint8Array>;
 }
 
-/**
- * PDF Export Strategy: Generates a high-fidelity PDF.
- * (Currently returns a marker string since PDF libraries can be complex for serverles environments, 
- * but follows the same async awaited pattern)
- */
 export class PdfExportStrategy implements ExportStrategy {
     async execute(options: ExportOptions): Promise<string> {
         console.log(`[SRE] Generando PDF para: ${options.title}`);
-        // Return placeholder or implement pdf-lib logic
         return `PDF_BASE64_PLACEHOLDER_FOR_${options.title}`;
     }
 }
 
-/**
- * EPUB Export Strategy: Generates a valid EPUB with HTML conversion.
- * Logic: Markdown (AI) -> HTML (Snarkdown) -> EPUB (epub-gen-memory)
- */
 export class EpubExportStrategy implements ExportStrategy {
     async execute(options: ExportOptions): Promise<Buffer> {
         console.log(`[SRE] Iniciando generación de EPUB: ${options.title}`);
 
-        // Pandoc Logic: Convert Markdown to valid HTML/XHTML for EPUB
-        // We wrap it in simple HTML structure to avoid parsing errors in readers
         const htmlContent = snarkdown(options.content);
         const validatedHtml = `<div>${htmlContent}</div>`;
 
@@ -41,24 +29,22 @@ export class EpubExportStrategy implements ExportStrategy {
             title: options.title,
             author: options.author || "Traductor PDF Pro",
             publisher: "Resilient Translation Asset",
+            css: `
+                body { font-family: sans-serif; font-size: 12pt; line-height: 1.5; padding: 20px; }
+                h1, h2, h3 { color: #1e293b; margin-top: 1.5em; }
+                p { margin-bottom: 1em; }
+                code { background: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
+                pre { background: #f1f5f9; padding: 15px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.9em; }
+            `
         };
 
-        const chapters = [
-            {
-                title: "Traducción",
-                content: validatedHtml,
-            },
-        ];
+        const chapters = [{ title: "Traducción", content: validatedHtml }];
 
         try {
-            // Awaited Generation: Strict async flow to ensure buffer is full
             const buffer = await epub(epubOptions, chapters);
-
-            // SRE Check: Initial size validation on server
             if (!buffer || buffer.length < 100) {
                 throw new Error("EPUB buffer corruption: Size too small.");
             }
-
             console.log(`[SRE] EPUB generado exitosamente. Tamaño: ${buffer.length} bytes.`);
             return buffer;
         } catch (error: any) {
@@ -68,20 +54,10 @@ export class EpubExportStrategy implements ExportStrategy {
     }
 }
 
-/**
- * Strategy Context
- */
 export class ExporterContext {
     private strategy: ExportStrategy;
-
-    constructor(strategy: ExportStrategy) {
-        this.strategy = strategy;
-    }
-
-    setStrategy(strategy: ExportStrategy) {
-        this.strategy = strategy;
-    }
-
+    constructor(strategy: ExportStrategy) { this.strategy = strategy; }
+    setStrategy(strategy: ExportStrategy) { this.strategy = strategy; }
     async export(options: ExportOptions): Promise<string | Buffer | Uint8Array> {
         return await this.strategy.execute(options);
     }
