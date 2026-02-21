@@ -1,14 +1,12 @@
 "use server";
 
-import { translateContent } from "@/lib/translation-service";
-import { ExporterContext, PdfExportStrategy, EpubExportStrategy, ExportOptions } from "@/lib/export-strategy";
-import { extractPdfContent } from "@/lib/document-processor";
-
 /**
  * SRE Action: Extrae texto completo del PDF en el servidor
+ * Utiliza importación dinámica para evitar que pdf-parse rompa el SSR del cliente.
  */
 export async function extractTextAction(base64File: string) {
     try {
+        const { extractPdfContent } = await import("@/lib/document-processor");
         const nodeBuffer = Buffer.from(base64File, "base64");
         // Convert Node Buffer to ArrayBuffer
         const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
@@ -25,6 +23,7 @@ export async function extractTextAction(base64File: string) {
  */
 export async function translateChunkAction(text: string, targetLang: string) {
     try {
+        const { translateContent } = await import("@/lib/translation-service");
         const translated = await translateContent(text, targetLang);
         return { success: true, translated };
     } catch (error: any) {
@@ -44,10 +43,12 @@ export async function processTranslation(
     format: "pdf" | "epub"
 ) {
     try {
+        const { ExporterContext, PdfExportStrategy, EpubExportStrategy } = await import("@/lib/export-strategy");
+
         // En este flujo 4.0.1, el contenido YA viene traducido del cliente
         const translatedContent = content;
 
-        const options: ExportOptions = {
+        const options = {
             title,
             content: translatedContent,
             author: "Traductor PDF Pro",
@@ -67,7 +68,7 @@ export async function processTranslation(
         if (typeof fileData === "string") {
             base64Data = Buffer.from(fileData).toString("base64");
         } else {
-            base64Data = fileData.toString("base64");
+            base64Data = (fileData as any).toString("base64");
         }
 
         return {
