@@ -96,30 +96,40 @@ export default function LandingPage() {
                 exportFormat
             );
 
-            if (result.success) {
+            if (result.success && result.fileData) {
                 await simulateProgress(80, 2000);
                 setStatus("exporting");
                 await simulateProgress(100, 1000);
 
-                // Observabilidad (SRE): Log de depuración para verificar datos antes de descarga
-                console.log("[SRE Monitor] Datos recibidos para descarga:", result.translatedContent?.substring(0, 100) + "...");
+                // SRE: Awaited Generation & Validation Flow
+                console.log(`[SRE Monitor] Procesando activo ${exportFormat.toUpperCase()} para descarga...`);
 
-                if (!result.translatedContent || result.translatedContent.length < 10) {
-                    throw new Error("Contenido insuficiente para generar el archivo.");
+                // Decode Base64 to binary buffer
+                const binaryString = window.atob(result.fileData);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
                 }
 
-                // Generación de Activo (Blob Management)
                 const mimeType = exportFormat === "epub" ? "application/epub+zip" : "application/pdf";
-                const blob = new Blob([result.translatedContent], { type: mimeType });
-                const url = window.URL.createObjectURL(blob);
+                const blob = new Blob([bytes], { type: mimeType });
 
+                // SRE Check: Validación de integridad del Buffer antes de descarga
+                console.log(`[SRE Monitor] Validando buffer final. Tamaño: ${blob.size} bytes.`);
+
+                if (blob.size < 100) {
+                    throw new Error(`Error de Integridad: El archivo ${exportFormat.toUpperCase()} generado está vacío o es demasiado pequeño para ser un activo válido.`);
+                }
+
+                // Disparo de Descarga Seguro
+                const url = window.URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
                 a.download = `${result.title}.${exportFormat}`;
                 document.body.appendChild(a);
                 a.click();
 
-                // SRE: Limpieza de memoria
+                // Cleanup SRE: Evitar fugas de memoria
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
 
@@ -330,7 +340,7 @@ export default function LandingPage() {
                         </div>
                     ))}
                     <div className="text-center pt-8 opacity-20 text-[10px] font-mono">
-                        ASSET_VERSION: 2.1.0-GROQ (ULTRA_LATENCY_SYNC)
+                        ASSET_VERSION: 2.2.0-SRE-EPUB (INTEGRITY_SYNC)
                     </div>
                 </div>
             </div>

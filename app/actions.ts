@@ -28,17 +28,23 @@ export async function processTranslation(
         }
 
         const exporter = new ExporterContext(strategy);
-        // Note: Since we are on the server, we might return the translated content or a base64 string
-        // because returning a Blob from a server action can be tricky depending on the environment.
-        // For simplicity in this functional prototype, we'll return the translated content and format it client-side
-        // OR return a base64 version of the file.
+        const fileData = await exporter.export(options);
 
-        console.log(`[SRE Monitor] Traducción exitosa para: ${title}. Longitud: ${translatedContent.length}`);
+        // SRE Check: Ensure fileData is valid before returning
+        let base64Data = "";
+        if (typeof fileData === "string") {
+            base64Data = Buffer.from(fileData).toString("base64");
+        } else {
+            base64Data = fileData.toString("base64");
+        }
+
+        console.log(`[SRE Monitor] Traducción y Exportación (${format}) exitosa. Tamaño base64: ${base64Data.length}`);
 
         return {
             success: true,
-            translatedContent,
+            fileData: base64Data,
             title: `${title} (${targetLang})`,
+            format
         };
     } catch (error: any) {
         console.error("Server Action Error:", error);
