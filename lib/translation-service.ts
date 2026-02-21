@@ -10,27 +10,46 @@ export const translateContent = async (text: string, targetLanguage: string) => 
 
     // Pandoc-like logic: Ensure text is treated as Markdown
     const processedInput = text.trim();
+    let translatedText = "";
 
     // 1. Intentar con GROQ (Primary LPU)
     if (hasGroq) {
         try {
             console.log("[SRE] Iniciando traducción con GROQ (Primary)...");
-            return await translateWithGroq(processedInput, targetLanguage);
+            translatedText = await translateWithGroq(processedInput, targetLanguage);
         } catch (error: any) {
             console.warn("[SRE] Fallo en GROQ. Ejecutando fallback a GEMINI...", error.message);
         }
     }
 
     // 2. Fallback a GEMINI (High Availability Backup)
-    try {
-        console.log("[SRE] Fallback: Iniciando traducción con GEMINI...");
-        return await translateWithGemini(processedInput, targetLanguage);
-    } catch (error: any) {
-        if (error instanceof TranslationError) throw error;
+    if (!translatedText) {
+        try {
+            console.log("[SRE] Fallback: Iniciando traducción con GEMINI...");
+            translatedText = await translateWithGemini(processedInput, targetLanguage);
+        } catch (error: any) {
+            if (error instanceof TranslationError) throw error;
 
+            throw new TranslationError(
+                "Error persistente en todos los motores de traducción (Groq & Gemini).",
+                "MULTI_ENGINE_FAILURE"
+            );
+        }
+    }
+
+    // Sanitización (Pandoc Logic): Extraer solo el contenido Markdown si Groq añade explicaciones
+    // Groq a veces añade frases antes o después del código.
+    const codeBlockRegex = /```(?:markdown|md)?\s*([\s\S]*?)\s*```/i;
+    const match = translatedText.match(codeBlockRegex);
+    const sanitizedText = match ? match[1] : translatedText;
+
+    // Verificación de Contenido (Rigor SRE): Prevenir archivos corruptos o vacíos
+    if (!sanitizedText || sanitizedText.trim().length < 10) {
         throw new TranslationError(
-            "Error persistente en todos los motores de traducción (Groq & Gemini).",
-            "MULTI_ENGINE_FAILURE"
+            "Contenido insuficiente devuelto por la IA. El archivo no se generará.",
+            "INSUFFICIENT_CONTENT"
         );
     }
+
+    return sanitizedText.trim();
 };
