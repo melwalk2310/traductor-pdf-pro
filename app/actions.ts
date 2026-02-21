@@ -33,6 +33,8 @@ export async function processTranslation(
         // For simplicity in this functional prototype, we'll return the translated content and format it client-side
         // OR return a base64 version of the file.
 
+        console.log(`[SRE Monitor] Traducción exitosa para: ${title}. Longitud: ${translatedContent.length}`);
+
         return {
             success: true,
             translatedContent,
