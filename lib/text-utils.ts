@@ -3,7 +3,7 @@
  * @param text The source text
  * @param maxSize Maximum characters per chunk
  */
-export function chunkText(text: string, maxSize: number = 4000): string[] {
+export function chunkText(text: string, maxSize: number = 2000): string[] {
     const chunks: string[] = [];
     let currentPos = 0;
 

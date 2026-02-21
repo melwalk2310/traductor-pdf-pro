@@ -42,7 +42,6 @@ export default function BatchTranslator() {
         setProgress(5);
 
         try {
-            // 1. Extracción Client-Side (Legacy Node logic removed)
             setDetails("Leyendo estructura del PDF...");
             const arrayBuffer = await file.arrayBuffer();
             const doc = await extractPdfContent(arrayBuffer);
@@ -50,37 +49,48 @@ export default function BatchTranslator() {
             setStatus("translating");
             setProgress(15);
 
-            // 2. Thomas Mailund Chunking Engine
-            const chunks = chunkText(doc.content, 4000);
+            // 1. Atomic Chunking (2,000 chars)
+            const chunks = chunkText(doc.content, 2000);
             const total = chunks.length;
-            const translatedChunks: string[] = [];
+            let finalTranslation = ""; // Atomic Accumulator
 
-            setDetails(`Iniciando traducción de ${total} fragmentos...`);
+            setDetails(`Iniciando traducción de ${total} fragmentos atómicos...`);
 
-            // 3. Sequential Client-Side Loop (Proxy-less HA)
+            // 2. Sequential Loop with Retry Policy (v6.0.0)
             let i = 1;
             for (const chunk of chunks) {
-                setDetails(`Traduciendo bloque ${i} de ${total}...`);
+                let success = false;
+                let attempts = 0;
+                let translated = "";
 
-                const translated = await translateWithGroqClient(chunk, targetLang, apiKey);
-                translatedChunks.push(translated);
+                while (!success && attempts < 3) {
+                    try {
+                        setDetails(`Traduciendo bloque ${i} de ${total} (Intento ${attempts + 1}/3)...`);
+                        translated = await translateWithGroqClient(chunk, targetLang, apiKey);
+                        success = true;
+                    } catch (err: any) {
+                        attempts++;
+                        console.warn(`[SRE] Fallo en bloque ${i}, reintentando (${attempts}/3)...`, err.message);
+                        if (attempts >= 3) throw new Error(`Fallo persistente en bloque ${i} tras 3 intentos.`);
+                        await new Promise(r => setTimeout(r, 1000 * attempts)); // Backoff simple
+                    }
+                }
+
+                finalTranslation += translated + "\n\n";
 
                 const p = 15 + (i / total) * 75;
                 setProgress(p);
 
-                // Anti-RateLimit Delay
                 if (i < total) await new Promise(r => setTimeout(r, 600));
                 i++;
             }
 
-            // 4. Memory Optimization (Just-in-Time Reconstruction)
+            // 3. Deferred Export (Ensamblado final)
             setStatus("exporting");
-            setDetails("Ensamblando documento final y aplicando estilos...");
-            const fullBookContent = translatedChunks.join("\n\n");
+            setDetails("Ensamblando documento final con CSS de Rescate...");
 
-            // Llamada al servidor solo para empaquetamiento (EPUB binary assembly)
             const result = await processTranslation(
-                fullBookContent,
+                finalTranslation,
                 "auto",
                 targetLang,
                 file.name.replace(".pdf", ""),

@@ -31,8 +31,9 @@ export class EpubExportStrategy implements ExportStrategy {
             publisher: "Resilient Translation Asset",
             css: `
                 @page { margin: 1cm; }
-                body { font-family: 'serif'; font-size: 12pt; line-height: 1.6; color: #000; padding: 20px; }
-                h1 { font-size: 1.5em; text-align: center; margin-bottom: 1em; }
+                * { font-size: 12pt !important; }
+                body { font-family: 'serif'; line-height: 1.6; color: #000; padding: 20px; }
+                h1 { font-size: 1.5em !important; text-align: center; margin-bottom: 1em; }
                 p { text-indent: 1.5em; margin: 0; margin-bottom: 1em; }
                 code { background: #f1f5f9; padding: 2px 4px; border-radius: 4px; font-family: monospace; }
                 pre { background: #f1f5f9; padding: 15px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.9em; }
