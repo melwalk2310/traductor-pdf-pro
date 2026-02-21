@@ -1,6 +1,6 @@
 "use server";
 
-import { translateText } from "@/lib/gemini";
+import { translateContent } from "@/lib/translation-service";
 import { ExporterContext, PdfExportStrategy, EpubExportStrategy, ExportOptions } from "@/lib/export-strategy";
 
 export async function processTranslation(
@@ -11,9 +11,8 @@ export async function processTranslation(
     format: "pdf" | "epub"
 ) {
     try {
-        // Pandoc-like Pre-processing: Ensure content is treated as Markdown
-        // (Content is already structured in document-processor.ts)
-        const translatedContent = await translateText(content, targetLang);
+        // Pandoc-like Pre-processing applied inside translateContent
+        const translatedContent = await translateContent(content, targetLang);
 
         const options: ExportOptions = {
             title,
