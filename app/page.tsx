@@ -130,8 +130,13 @@ export default function LandingPage() {
             <div className="max-w-4xl w-full space-y-8">
                 {/* Header */}
                 <div className="text-center space-y-4">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider">
-                        <Languages className="w-3 h-3" /> Producción Ready
+                    <div className="flex flex-wrap justify-center gap-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                            <Languages className="w-3 h-3" /> Producción Ready
+                        </div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-bold uppercase tracking-wider border border-orange-200 dark:border-orange-800 animate-pulse">
+                            🚀 Powered by Groq LPU
+                        </div>
                     </div>
                     <h1 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-slate-100 lg:text-6xl">
                         TRADUCTOR <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">PDF PRO</span>

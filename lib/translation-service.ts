@@ -1,5 +1,5 @@
 import { translateText as translateWithGemini, TranslationError } from "./gemini";
-import { translateWithGroq } from "./groq";
+import { translateWithGroq } from "@/src/lib/groq";
 
 /**
  * Unified Translation Service with SRE High Availability Fallback
